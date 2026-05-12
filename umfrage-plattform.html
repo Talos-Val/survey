@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POLIS – Umfragen</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --danger: #ff4757;
+    --text: #f0f0f5;
+    --muted: #6b6b80;
+    --admin: #ffb347;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    user-select: none;
+  }
+  .logo span { color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-admin { background: var(--admin); color: #000; }
+  .badge-super { background: var(--accent2); color: #000; }
+  .badge-user  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 20px; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+    border: none; transition: all 0.18s;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #d4eb3a; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(232,255,71,0.25); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-code { background: var(--surface2); color: var(--accent2); border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .btn-code:hover { border-color: var(--accent2); }
+  .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+
+  /* ── LAYOUT ── */
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+  .container-wide { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── AUTH ── */
+  .auth-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 24px;
+  }
+  .auth-box {
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-box::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(232,255,71,0.12), transparent 70%);
+    pointer-events: none;
+  }
+  .auth-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem; letter-spacing: 3px;
+    margin-bottom: 6px; color: var(--accent);
+  }
+  .auth-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; }
+  .tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 20px; cursor: pointer; font-size: 0.88rem; font-weight: 500;
+    color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all 0.18s; margin-bottom: -1px;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── FORM ELEMENTS ── */
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 0.78rem; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 10px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    transition: border-color 0.18s; outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--accent);
+  }
+  .field select option { background: var(--surface2); }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .error-msg {
+    background: rgba(255,71,87,0.12); border: 1px solid rgba(255,71,87,0.3);
+    color: var(--danger); border-radius: 7px; padding: 10px 14px;
+    font-size: 0.85rem; margin-bottom: 16px; display: none;
+  }
+  .error-msg.show { display: block; }
+  .success-msg {
+    background: rgba(232,255,71,0.1); border: 1px solid rgba(232,255,71,0.25);
+    color: var(--accent); border-radius: 7px; padding: 10px 14px;
+    font-size: 0.85rem; margin-bottom: 16px; display: none;
+  }
+  .success-msg.show { display: block; }
+
+  /* ── DASHBOARD ── */
+  .dash-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+  }
+  .dash-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem; letter-spacing: 3px; color: var(--text);
+  }
+  .dash-title span { color: var(--accent); }
+
+  .survey-grid { display: grid; gap: 16px; }
+  .survey-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    transition: border-color 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .survey-card:hover { border-color: var(--muted); }
+  .survey-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  .survey-card:hover::before { opacity: 1; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+  .card-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem; padding: 3px 8px; border-radius: 4px;
+    border: 1px solid var(--border); color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .chip-anon { border-color: rgba(71,200,255,0.3); color: var(--accent2); }
+  .chip-multi { border-color: rgba(232,255,71,0.3); color: var(--accent); }
+
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .vote-count {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem; color: var(--accent); line-height: 1;
+  }
+  .vote-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .empty-state {
+    text-align: center; padding: 80px 24px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text); }
+
+  /* ── CREATE SURVEY ── */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem; letter-spacing: 3px; margin-bottom: 28px;
+    color: var(--accent);
+  }
+
+  .options-list { display: grid; gap: 10px; margin-bottom: 14px; }
+  .option-row { display: flex; gap: 8px; align-items: center; }
+  .option-row input { flex: 1; }
+  .btn-remove-opt {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; padding: 8px 12px;
+    cursor: pointer; font-size: 1rem; transition: all 0.18s; flex-shrink: 0;
+  }
+  .btn-remove-opt:hover { border-color: var(--danger); color: var(--danger); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .toggle-info strong { display: block; font-size: 0.92rem; margin-bottom: 2px; }
+  .toggle-info span { font-size: 0.82rem; color: var(--muted); }
+  .toggle { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 24px; cursor: pointer; transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; left: 3px; top: 3px;
+    background: var(--muted); border-radius: 50%; transition: 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: #000; }
+
+  /* ── VOTE PAGE ── */
+  .vote-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 24px;
+  }
+  .vote-box {
+    width: 100%; max-width: 540px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 40px;
+  }
+  .vote-question {
+    font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; line-height: 1.4;
+  }
+  .vote-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 28px; }
+  .options-vote { display: grid; gap: 10px; margin-bottom: 28px; }
+  .opt-label {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px;
+    cursor: pointer; transition: all 0.18s;
+    font-size: 0.95rem;
+  }
+  .opt-label:hover { border-color: var(--muted); }
+  .opt-label input[type="radio"], .opt-label input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+  .opt-label.selected { border-color: var(--accent); background: rgba(232,255,71,0.07); }
+
+  .name-field-wrap { margin-bottom: 20px; }
+
+  /* ── RESULTS ── */
+  .results-wrap { padding: 40px 24px; max-width: 700px; margin: 0 auto; }
+  .result-bar-wrap { margin-bottom: 20px; }
+  .result-bar-top { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; }
+  .result-bar-bg {
+    background: var(--surface2); border-radius: 6px; height: 12px; overflow: hidden;
+  }
+  .result-bar-fill {
+    height: 100%; border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .result-pct { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.82rem; }
+
+  .voters-list {
+    margin-top: 24px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+  }
+  .voters-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; }
+  .voter-entry { font-size: 0.88rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
+  .voter-entry:last-child { border-bottom: none; }
+  .voter-name { font-weight: 500; min-width: 120px; }
+  .voter-choices { color: var(--muted); font-size: 0.83rem; }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 24px; display: none;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px; max-width: 460px; width: 100%;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+  .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .code-display {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px;
+    font-family: 'DM Mono', monospace; font-size: 0.9rem;
+    color: var(--accent2); word-break: break-all;
+    margin-bottom: 16px; letter-spacing: 1px;
+  }
+
+  /* ── VOTED STATE ── */
+  .voted-box { text-align: center; padding: 40px 24px; }
+  .voted-icon { font-size: 3rem; margin-bottom: 16px; }
+  .voted-box h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+  .voted-box p { color: var(--muted); }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* Scroll fix */
+  html { scroll-behavior: smooth; }
+
+  /* Nav back */
+  .nav-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 0.88rem; cursor: pointer;
+    margin-bottom: 28px; transition: color 0.18s;
+    background: none; border: none;
+  }
+  .nav-back:hover { color: var(--text); }
+
+  .section-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 16px; font-family: 'DM Mono', monospace;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 14px 16px; }
+    .container, .container-wide { padding: 24px 16px; }
+    .auth-box, .vote-box { padding: 28px 20px; }
+    .form-card { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">POL<span>IS</span></div>
+  <div class="header-right" id="headerRight" style="display:none">
+    <span id="headerBadge" class="badge"></span>
+    <span id="headerUsername" style="font-size:0.88rem; color:var(--muted);"></span>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Abmelden</button>
+  </div>
+</header>
+
+<!-- ══ AUTH PAGE ══ -->
+<div id="pageAuth" class="page active">
+  <div class="auth-wrap">
+    <div class="auth-box">
+      <div class="auth-title">POLIS</div>
+      <div class="auth-sub">Deine Plattform für Umfragen.</div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('login')">Anmelden</div>
+        <div class="tab" onclick="switchTab('register')">Registrieren</div>
+      </div>
+
+      <div id="authError" class="error-msg"></div>
+      <div id="authSuccess" class="success-msg"></div>
+
+      <!-- Login -->
+      <div id="loginForm">
+        <div class="field">
+          <label>Benutzername</label>
+          <input type="text" id="loginUser" placeholder="dein_name" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Passwort</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="doLogin()">Anmelden →</button>
+      </div>
+
+      <!-- Register -->
+      <div id="registerForm" style="display:none">
+        <div class="field">
+          <label>Benutzername</label>
+          <input type="text" id="regUser" placeholder="dein_name" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Passwort</label>
+          <input type="password" id="regPass" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Passwort bestätigen</label>
+          <input type="password" id="regPass2" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="doRegister()">Konto erstellen →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="pageDashboard" class="page">
+  <div class="container-wide">
+    <div class="dash-header">
+      <div>
+        <div class="section-label">Übersicht</div>
+        <div class="dash-title">MEINE <span>UMFRAGEN</span></div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('pageCreate')">+ Neue Umfrage</button>
+    </div>
+
+    <div id="surveyGrid" class="survey-grid"></div>
+  </div>
+</div>
+
+<!-- ══ CREATE PAGE ══ -->
+<div id="pageCreate" class="page">
+  <div class="container">
+    <button class="nav-back" onclick="showPage('pageDashboard')">← Zurück</button>
+    <div class="form-card">
+      <div class="form-title">UMFRAGE ERSTELLEN</div>
+
+      <div id="createError" class="error-msg"></div>
+
+      <div class="field">
+        <label>Frage / Titel</label>
+        <input type="text" id="surveyTitle" placeholder="Was ist deine Lieblingsprogrammiersprache?" maxlength="200">
+      </div>
+
+      <div class="field">
+        <label>Beschreibung (optional)</label>
+        <textarea id="surveyDesc" placeholder="Zusätzliche Infos zur Umfrage..."></textarea>
+      </div>
+
+      <hr>
+      <div class="section-label">Antwortmöglichkeiten</div>
+      <div class="options-list" id="optionsList"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addOption()">+ Option hinzufügen</button>
+
+      <hr>
+      <div class="section-label">Einstellungen</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <strong>Mehrfachauswahl</strong>
+          <span>Nutzer können mehrere Antworten wählen</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingMulti">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row" style="border-bottom:none; margin-bottom:0;">
+        <div class="toggle-info">
+          <strong>Anonym</strong>
+          <span>Namen der Abstimmenden werden nicht gespeichert</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingAnon">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <hr>
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="createSurvey()">Umfrage veröffentlichen →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VOTE PAGE ══ -->
+<div id="pageVote" class="page">
+  <div class="vote-wrap">
+    <div class="vote-box" id="voteBox"></div>
+  </div>
+</div>
+
+<!-- ══ RESULTS PAGE ══ -->
+<div id="pageResults" class="page">
+  <div class="results-wrap">
+    <button class="nav-back" onclick="showPage('pageDashboard')">← Zurück zum Dashboard</button>
+    <div id="resultsContent"></div>
+  </div>
+</div>
+
+<!-- ══ CODE MODAL ══ -->
+<div class="modal-backdrop" id="codeModal">
+  <div class="modal">
+    <h3>Umfrage-Link teilen</h3>
+    <p>Kopiere diesen Link und teile ihn, um direkt zu dieser Umfrage zu gelangen.</p>
+    <div class="code-display" id="codeDisplay"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('codeModal')">Schließen</button>
+      <button class="btn btn-primary" onclick="copyCode()">Link kopieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE CONFIRM MODAL ══ -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal">
+    <h3>Umfrage löschen?</h3>
+    <p>Diese Aktion kann nicht rückgängig gemacht werden. Alle Abstimmungen gehen verloren.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Abbrechen</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  CONSTANTS & STATE
+// ══════════════════════════════════════
+const ADMIN_USER   = 'admin';
+const SPECIAL_USER = 'Talos-Val';
+let currentUser  = null;
+let pendingDelete = null;
+let currentSurveyId = null;
+
+// ══════════════════════════════════════
+//  STORAGE HELPERS
+// ══════════════════════════════════════
+const db = {
+  getUsers()    { return JSON.parse(localStorage.getItem('polis_users') || '[]'); },
+  setUsers(u)   { localStorage.setItem('polis_users', JSON.stringify(u)); },
+  getSurveys()  { return JSON.parse(localStorage.getItem('polis_surveys') || '[]'); },
+  setSurveys(s) { localStorage.setItem('polis_surveys', JSON.stringify(s)); },
+  getVotes()    { return JSON.parse(localStorage.getItem('polis_votes') || '{}'); },
+  setVotes(v)   { localStorage.setItem('polis_votes', JSON.stringify(v)); },
+};
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ══════════════════════════════════════
+//  INIT – seed admin if not present
+// ══════════════════════════════════════
+(function init() {
+  const users = db.getUsers();
+  if (!users.find(u => u.username === ADMIN_USER)) {
+    users.push({ username: ADMIN_USER, password: 'admin123', role: 'admin' });
+    db.setUsers(users);
+  }
+  // Check URL hash for survey code
+  checkHash();
+})();
+
+function checkHash() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#vote=')) {
+    const id = hash.slice(6);
+    const surveys = db.getSurveys();
+    const s = surveys.find(x => x.id === id);
+    if (s) {
+      sessionStorage.setItem('pendingVote', id);
+    }
+  }
+}
+
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash;
+  if (hash.startsWith('#vote=')) {
+    const id = hash.slice(6);
+    openVotePage(id);
+  }
+});
+
+// ══════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'pageDashboard') renderDashboard();
+}
+
+// ══════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none';
+  clearAuthMsgs();
+}
+
+function clearAuthMsgs() {
+  ['authError','authSuccess'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('show'); el.textContent = '';
+  });
+}
+
+function showAuthError(msg)   { const e=document.getElementById('authError'); e.textContent=msg; e.classList.add('show'); }
+function showAuthSuccess(msg) { const e=document.getElementById('authSuccess'); e.textContent=msg; e.classList.add('show'); }
+
+function doLogin() {
+  clearAuthMsgs();
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  if (!username || !password) return showAuthError('Bitte alle Felder ausfüllen.');
+  const users = db.getUsers();
+  const user  = users.find(u => u.username === username && u.password === password);
+  if (!user) return showAuthError('Falscher Benutzername oder Passwort.');
+  loginSuccess(user);
+}
+
+function doRegister() {
+  clearAuthMsgs();
+  const username = document.getElementById('regUser').value.trim();
+  const password = document.getElementById('regPass').value;
+  const password2= document.getElementById('regPass2').value;
+  if (!username || !password) return showAuthError('Bitte alle Felder ausfüllen.');
+  if (username.length < 3) return showAuthError('Benutzername muss mindestens 3 Zeichen haben.');
+  if (password.length < 6) return showAuthError('Passwort muss mindestens 6 Zeichen haben.');
+  if (password !== password2) return showAuthError('Passwörter stimmen nicht überein.');
+  const users = db.getUsers();
+  if (users.find(u => u.username.toLowerCase() === username.toLowerCase()))
+    return showAuthError('Dieser Benutzername ist bereits vergeben.');
+  const role = username === SPECIAL_USER ? 'super' : 'user';
+  users.push({ username, password, role });
+  db.setUsers(users);
+  showAuthSuccess('Konto erstellt! Du kannst dich jetzt anmelden.');
+  switchTab('login');
+  document.getElementById('loginUser').value = username;
+}
+
+function loginSuccess(user) {
+  currentUser = user;
+  // Show header
+  document.getElementById('headerRight').style.display = 'flex';
+  document.getElementById('headerUsername').textContent = user.username;
+  const badge = document.getElementById('headerBadge');
+  if (user.role === 'admin' || user.username === ADMIN_USER) {
+    badge.textContent = 'Admin'; badge.className = 'badge badge-admin';
+    currentUser.role = 'admin';
+  } else if (user.username === SPECIAL_USER || user.role === 'super') {
+    badge.textContent = 'Super'; badge.className = 'badge badge-super';
+    currentUser.role = 'super';
+  } else {
+    badge.textContent = 'Nutzer'; badge.className = 'badge badge-user';
+  }
+
+  // Check pending vote
+  const pending = sessionStorage.getItem('pendingVote');
+  if (pending) {
+    sessionStorage.removeItem('pendingVote');
+    openVotePage(pending);
+    return;
+  }
+  showPage('pageDashboard');
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('headerRight').style.display = 'none';
+  window.location.hash = '';
+  showPage('pageAuth');
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+function renderDashboard() {
+  const surveys = db.getSurveys();
+  const grid    = document.getElementById('surveyGrid');
+  const isAdmin = currentUser.role === 'admin';
+  const isSuper = currentUser.role === 'super';
+
+  let visible;
+  if (isAdmin || isSuper) {
+    visible = surveys; // sehen alle
+  } else {
+    visible = surveys.filter(s => s.createdBy === currentUser.username);
+  }
+
+  if (visible.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>${isAdmin||isSuper ? 'Noch keine Umfragen vorhanden.' : 'Du hast noch keine Umfragen erstellt.'}</h3>
+        <p style="color:var(--muted); margin-top:8px; font-size:0.88rem;">
+          ${isAdmin||isSuper ? '' : 'Erstelle deine erste Umfrage über den Button oben.'}
+        </p>
+      </div>`;
+    return;
+  }
+
+  const votes = db.getVotes();
+  grid.innerHTML = visible.map(s => {
+    const voteData = votes[s.id] || [];
+    const total    = voteData.length;
+    const canDelete= isAdmin || isSuper || s.createdBy === currentUser.username;
+    const canSeeResults = isAdmin || isSuper || s.createdBy === currentUser.username;
+
+    return `
+    <div class="survey-card">
+      <div class="card-top">
+        <div style="flex:1">
+          <div class="card-title">${escHtml(s.title)}</div>
+          <div class="card-meta">
+            <span class="chip">von ${escHtml(s.createdBy)}</span>
+            ${s.multi ? '<span class="chip chip-multi">Mehrfach</span>' : '<span class="chip">Einzel</span>'}
+            ${s.anon  ? '<span class="chip chip-anon">Anonym</span>'   : '<span class="chip">Namentlich</span>'}
+          </div>
+          ${s.desc ? `<p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">${escHtml(s.desc)}</p>` : ''}
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div class="vote-count">${total}</div>
+          <div class="vote-label">${total===1?'Stimme':'Stimmen'}</div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openVotePage('${s.id}')">Abstimmen</button>
+        ${canSeeResults ? `<button class="btn btn-ghost btn-sm" onclick="showResults('${s.id}')">Ergebnisse</button>` : ''}
+        <button class="btn btn-code btn-sm" onclick="showCode('${s.id}')">🔗 Link</button>
+        ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="askDelete('${s.id}')">Löschen</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+//  CREATE SURVEY
+// ══════════════════════════════════════
+let optionCount = 0;
+
+function addOption(value='') {
+  const list = document.getElementById('optionsList');
+  const id   = `opt_${++optionCount}`;
+  const row  = document.createElement('div');
+  row.className = 'option-row';
+  row.id = `row_${id}`;
+  row.innerHTML = `
+    <input type="text" class="survey-opt" placeholder="Antwortmöglichkeit..." value="${escHtml(value)}">
+    <button class="btn-remove-opt" onclick="removeOption('row_${id}')">×</button>`;
+  list.appendChild(row);
+}
+
+function removeOption(rowId) {
+  const row = document.getElementById(rowId);
+  if (document.querySelectorAll('.option-row').length <= 2) {
+    return alert('Mindestens 2 Optionen erforderlich.');
+  }
+  if (row) row.remove();
+}
+
+function initCreateForm() {
+  document.getElementById('surveyTitle').value = '';
+  document.getElementById('surveyDesc').value  = '';
+  document.getElementById('optionsList').innerHTML = '';
+  document.getElementById('settingMulti').checked = false;
+  document.getElementById('settingAnon').checked  = false;
+  optionCount = 0;
+  addOption(); addOption();
+  document.getElementById('createError').classList.remove('show');
+}
+
+document.getElementById('pageCreate').addEventListener('click', () => {}); // prevent bubbling
+
+function showCreatePage() {
+  initCreateForm();
+  showPage('pageCreate');
+}
+
+// Hook create button properly
+document.querySelector('[onclick="showPage(\'pageCreate\')"]').onclick = function() { showCreatePage(); };
+
+function createSurvey() {
+  const title  = document.getElementById('surveyTitle').value.trim();
+  const desc   = document.getElementById('surveyDesc').value.trim();
+  const opts   = [...document.querySelectorAll('.survey-opt')].map(i => i.value.trim()).filter(Boolean);
+  const multi  = document.getElementById('settingMulti').checked;
+  const anon   = document.getElementById('settingAnon').checked;
+  const errEl  = document.getElementById('createError');
+  errEl.classList.remove('show');
+
+  if (!title)        { errEl.textContent='Bitte eine Frage eingeben.'; errEl.classList.add('show'); return; }
+  if (opts.length<2) { errEl.textContent='Mindestens 2 Antwortmöglichkeiten erforderlich.'; errEl.classList.add('show'); return; }
+
+  const survey = {
+    id: genId(),
+    title, desc, options: opts, multi, anon,
+    createdBy: currentUser.username,
+    createdAt: Date.now()
+  };
+  const surveys = db.getSurveys();
+  surveys.push(survey);
+  db.setSurveys(surveys);
+  showPage('pageDashboard');
+}
+
+// ══════════════════════════════════════
+//  VOTE
+// ══════════════════════════════════════
+function openVotePage(id) {
+  if (!currentUser) {
+    sessionStorage.setItem('pendingVote', id);
+    showPage('pageAuth');
+    return;
+  }
+  currentSurveyId = id;
+  const surveys = db.getSurveys();
+  const s = surveys.find(x => x.id === id);
+  const voteBox = document.getElementById('voteBox');
+
+  if (!s) {
+    voteBox.innerHTML = `<div class="voted-box"><div class="voted-icon">❌</div><h2>Nicht gefunden</h2><p>Diese Umfrage existiert nicht mehr.</p></div>`;
+    showPage('pageVote');
+    return;
+  }
+
+  // Check if already voted
+  const votes = db.getVotes();
+  const voteData = votes[id] || [];
+  const alreadyVoted = voteData.find(v => v.username === currentUser.username);
+  if (alreadyVoted) {
+    voteBox.innerHTML = `
+      <div class="voted-box">
+        <div class="voted-icon">✅</div>
+        <h2>BEREITS ABGESTIMMT</h2>
+        <p>Du hast bereits an dieser Umfrage teilgenommen.</p>
+        <br>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('pageDashboard')">← Zurück</button>
+      </div>`;
+    showPage('pageVote');
+    return;
+  }
+
+  const inputType = s.multi ? 'checkbox' : 'radio';
+  const nameField = !s.anon ? `
+    <div class="name-field-wrap">
+      <div class="field">
+        <label>Dein Name (wird gespeichert)</label>
+        <input type="text" id="voterName" value="${escHtml(currentUser.username)}" readonly>
+      </div>
+    </div>` : `<p class="vote-sub" style="margin-bottom:16px;">🔒 Diese Umfrage ist anonym.</p>`;
+
+  voteBox.innerHTML = `
+    <button class="nav-back" onclick="showPage('pageDashboard')" style="margin-bottom:20px; display:inline-flex;">← Zurück</button>
+    <div class="vote-question">${escHtml(s.title)}</div>
+    <div class="vote-sub">${escHtml(s.desc)}${s.multi?' · Mehrfachauswahl möglich':' · Nur eine Antwort'}</div>
+    ${nameField}
+    <div class="options-vote" id="voteOptions">
+      ${s.options.map((opt,i) => `
+        <label class="opt-label" id="optLabel_${i}" onclick="toggleOptLabel(${i},'${inputType}')">
+          <input type="${inputType}" name="voteOpt" value="${i}" id="voteOpt_${i}">
+          ${escHtml(opt)}
+        </label>`).join('')}
+    </div>
+    <div id="voteError" class="error-msg"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitVote('${id}')">Abstimmen →</button>`;
+  showPage('pageVote');
+}
+
+function toggleOptLabel(i, type) {
+  if (type === 'radio') {
+    document.querySelectorAll('.opt-label').forEach(l => l.classList.remove('selected'));
+    document.getElementById(`optLabel_${i}`).classList.add('selected');
+  } else {
+    document.getElementById(`optLabel_${i}`).classList.toggle('selected');
+  }
+}
+
+function submitVote(id) {
+  const surveys = db.getSurveys();
+  const s = surveys.find(x => x.id === id);
+  const errEl = document.getElementById('voteError');
+  errEl.classList.remove('show');
+
+  const selected = [...document.querySelectorAll('input[name="voteOpt"]:checked')].map(i => parseInt(i.value));
+  if (selected.length === 0) {
+    errEl.textContent = 'Bitte mindestens eine Option wählen.'; errEl.classList.add('show'); return;
+  }
+
+  const votes = db.getVotes();
+  if (!votes[id]) votes[id] = [];
+  votes[id].push({
+    username: s.anon ? null : currentUser.username,
+    choices: selected,
+    ts: Date.now()
+  });
+  db.setVotes(votes);
+
+  document.getElementById('voteBox').innerHTML = `
+    <div class="voted-box">
+      <div class="voted-icon">🎉</div>
+      <h2>DANKE!</h2>
+      <p>Deine Stimme wurde gezählt.</p>
+      <br>
+      <button class="btn btn-primary" onclick="showPage('pageDashboard')">← Zum Dashboard</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════
+function showResults(id) {
+  const surveys = db.getSurveys();
+  const s = surveys.find(x => x.id === id);
+  if (!s) return;
+
+  const votes    = db.getVotes();
+  const voteData = votes[id] || [];
+  const total    = voteData.length;
+
+  // Count per option
+  const counts = new Array(s.options.length).fill(0);
+  voteData.forEach(v => v.choices.forEach(c => counts[c]++));
+
+  const barsHtml = s.options.map((opt,i) => {
+    const pct = total === 0 ? 0 : Math.round((counts[i] / total) * 100);
+    return `
+      <div class="result-bar-wrap">
+        <div class="result-bar-top">
+          <span>${escHtml(opt)}</span>
+          <span class="result-pct">${counts[i]} (${pct}%)</span>
+        </div>
+        <div class="result-bar-bg">
+          <div class="result-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let votersHtml = '';
+  if (!s.anon && (currentUser.role === 'admin' || currentUser.role === 'super')) {
+    votersHtml = `
+      <div class="voters-list">
+        <div class="voters-title">Abstimmende (${total})</div>
+        ${voteData.length === 0 ? '<p style="color:var(--muted);font-size:0.85rem;">Noch keine Stimmen.</p>' :
+          voteData.map(v => `
+            <div class="voter-entry">
+              <span class="voter-name">${escHtml(v.username||'Anonym')}</span>
+              <span class="voter-choices">→ ${v.choices.map(c=>escHtml(s.options[c])).join(', ')}</span>
+            </div>`).join('')}
+      </div>`;
+  } else if (s.anon) {
+    votersHtml = `<p style="color:var(--muted);font-size:0.82rem;margin-top:16px;">🔒 Anonyme Umfrage – Namen werden nicht angezeigt.</p>`;
+  }
+
+  document.getElementById('resultsContent').innerHTML = `
+    <div class="section-label">Ergebnisse</div>
+    <h2 style="font-size:1.5rem;font-weight:600;margin-bottom:6px;">${escHtml(s.title)}</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:28px;">${total} ${total===1?'Stimme':'Stimmen'} gesamt · ${s.multi?'Mehrfachauswahl':'Einzelauswahl'} · ${s.anon?'Anonym':'Namentlich'}</p>
+    ${barsHtml}
+    ${votersHtml}`;
+
+  showPage('pageResults');
+}
+
+// ══════════════════════════════════════
+//  SHARE CODE / LINK
+// ══════════════════════════════════════
+function showCode(id) {
+  const url = `${location.origin}${location.pathname}#vote=${id}`;
+  document.getElementById('codeDisplay').textContent = url;
+  document.getElementById('codeModal').classList.add('open');
+}
+
+function copyCode() {
+  const text = document.getElementById('codeDisplay').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('#codeModal .btn-primary');
+    btn.textContent = '✓ Kopiert!';
+    setTimeout(() => btn.textContent = 'Link kopieren', 2000);
+  });
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ══════════════════════════════════════
+//  DELETE
+// ══════════════════════════════════════
+function askDelete(id) {
+  pendingDelete = id;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function confirmDelete() {
+  if (!pendingDelete) return;
+  let surveys = db.getSurveys();
+  surveys = surveys.filter(s => s.id !== pendingDelete);
+  db.setSurveys(surveys);
+  const votes = db.getVotes();
+  delete votes[pendingDelete];
+  db.setVotes(votes);
+  pendingDelete = null;
+  closeModal('deleteModal');
+  renderDashboard();
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+  backdrop.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+
+// Enter key submit for login/register
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('regPass2').addEventListener('keydown',  e => { if(e.key==='Enter') doRegister(); });
+</script>
+</body>
+</html>
